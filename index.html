@@ -666,18 +666,36 @@
         });
 
         // Checkout
-        if (checkoutButton) {
-            checkoutButton.addEventListener('click', function () {
-                if (cart.length > 0) {
-                    alert(`Thank you for your order!\nTotal: ${cartTotalDisplay.textContent}`);
-                    cart = [];
-                    bowlCounter = 1; // Reset bowl counter on checkout
-                    updateCartDisplay();
-                } else {
-                    alert('Your cart is empty. Please add items to your order.');
-                }
-            });
-        }
+
+        checkoutButton.addEventListener('click', function () {
+    if (cart.length > 0) {
+        const orderDetails = {
+            orderNumber: Date.now(),
+            mode: localStorage.getItem("orderMode") || "Not Selected",
+            items: cart.map(item => ({
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                ingredients: item.ingredients ? item.ingredients.join(", ") : "No custom ingredients"
+            })),
+            total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            status: "Pending"
+        };
+
+        let orders = JSON.parse(localStorage.getItem("admin-orders")) || [];
+        orders.push(orderDetails);
+        localStorage.setItem("admin-orders", JSON.stringify(orders));
+
+        alert("Order placed successfully!");
+        cart = [];
+        updateCartDisplay();
+    } else {
+        alert('Your cart is empty.');
+    }
+});
+
+
+//checkout
 
         // Customization
         const customizeExistingBowlSelect = document.getElementById('customize-target-bowl');
