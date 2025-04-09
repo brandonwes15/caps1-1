@@ -199,21 +199,27 @@
         </tbody>
     </table>
 
-    <h2>Pending Orders</h2>
-    <table id="pendingOrdersTable">
+    <section class="admin-actions">
+        <button id="logout-btn">Log Out</button>
+    </section>
+
+    <section class="orders">
+    <h2>Current Orders</h2>
+    <table id="orders-table">
         <thead>
             <tr>
-                <th>Order #</th>
-                <th>Item Name</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Actions</th>
+                    <th>Order No.</th>
+                    <th>Order Mode</th> 
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Order status</th>
+                        <th>Actions</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+</section>
 
     <script>
         const menuItems = [{
@@ -266,26 +272,8 @@
             },
         ];
 
-        // Sample pending orders data (replace with your actual data source)
-        const pendingOrders = [{
-                orderNumber: 1,
-                itemName: "Miso Ramen",
-                quantity: 4,
-                price: 295,
-                status: "Pending"
-            },
-            {
-                orderNumber: 2,
-                itemName: "Spicy Ramen",
-                quantity: 2,
-                price: 299,
-                status: "Pending"
-            },
-            // Add more pending orders as needed
-        ];
 
         const menuTable = document.getElementById('menuTable').getElementsByTagName('tbody')[0];
-        const pendingOrdersTable = document.getElementById('pendingOrdersTable').getElementsByTagName('tbody')[0];
         const addItemBtn = document.getElementById('addItemBtn');
         const itemForm = document.getElementById('itemForm');
         const itemDetailsForm = document.getElementById('itemDetailsForm');
@@ -311,35 +299,68 @@
             });
         }
 
-        function populatePendingOrders() {
-            pendingOrdersTable.innerHTML = '';
-            for (let i = 0; i < pendingOrders.length; i++) {
-                const order = pendingOrders[i];
-                const row = pendingOrdersTable.insertRow();
-                row.innerHTML = `
-                    <td>${order.orderNumber}</td>
-                    <td>${order.itemName}</td>
-                    <td>${order.quantity}</td>
-                    <td>₱${order.price.toFixed(2)}</td>
-                    <td>${order.status}</td>
-                    <td>
-                        <button onclick="markAsServed(${order.orderNumber})">Mark as Served</button>
-                    </td>
-                `;
-            }
+        
+    
+        document.addEventListener("DOMContentLoaded", function () {
+    function renderOrders() {
+        const ordersTable = document.getElementById("orders-table").getElementsByTagName("tbody")[0];
+        ordersTable.innerHTML = ""; // Clear table
+
+        const orders = JSON.parse(localStorage.getItem("admin-orders")) || [];
+
+        if (orders.length === 0) {
+            ordersTable.innerHTML = `<tr><td colspan="5">No orders yet.</td></tr>`;
+            return;
         }
 
-        function markAsServed(orderNumber) {
-            const index = pendingOrders.findIndex(order => order.orderNumber === orderNumber);
-
-            if (index !== -1) {
-                pendingOrders.splice(index, 1);
-                populatePendingOrders();
-                console.log(`Order #${orderNumber} marked as served and removed.`);
-            } else {
-                console.log(`Order #${orderNumber} not found.`);
+        orders.forEach((order, index) => {
+            if (!order.items || !Array.isArray(order.items)) {
+                console.error(`Invalid order format at index ${index}`, order);
+                return;
             }
+
+            const items = order.items.map(item => {
+                return `${item.name} (₱${item.price} x ${item.quantity})<br>
+                <small>Ingredients: ${item.ingredients}</small>`;
+            }).join("<br><br>");
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>Order #${order.orderNumber}</td>
+                <td>${order.mode || "N/A"}</td> 
+                <td>${items}</td>
+                <td>₱${order.total.toFixed(2)}</td>
+                <td>${order.status}</td>
+                <td><button class="serve-btn" data-index="${index}">Serve</button></td>
+            `;
+            ordersTable.appendChild(row);
+        });
+
+        // Attach event listeners to "Serve" buttons
+        document.querySelectorAll(".serve-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                serveOrder(this.getAttribute("data-index"));
+            });
+        });
+    }
+
+    function serveOrder(index) {
+        let orders = JSON.parse(localStorage.getItem("admin-orders")) || [];
+
+        if (orders[index]) {
+            orders.splice(index, 1);
+            localStorage.setItem("admin-orders", JSON.stringify(orders));
+            renderOrders();
         }
+    }
+
+    renderOrders();
+});
+
+        //cartupdate
+
+
 
         function editItem(index) {
             editingIndex = index;
@@ -393,7 +414,20 @@
 
         populateTable();
         populatePendingOrders();
+
+        
+
+        //logout
+        document.addEventListener('DOMContentLoaded', function () {
+    const logoutButton = document.getElementById('logout-btn');
+    logoutButton.addEventListener('click', function () {
+        localStorage.removeItem('admin-user'); // Clear session
+        localStorage.removeItem('admin-orders'); // Optional: clear orders on logout
+        window.location.href = 'login.html';
+    });
+});
+
     </script>
 </body>
 
-</html>
+</html> 
